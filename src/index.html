@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#172b2a" />
+    <meta
+      name="description"
+      content="29 天一人公共交通游新疆：从乌鲁木齐到哈密，按天查看城市、交通、景点、关键路线和旅行花销。"
+    />
+    <title>向西去｜29天一人公共交通游新疆</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="返回顶部">
+        <span class="brand-mark" aria-hidden="true">西</span>
+        <span>向西去</span>
+      </a>
+      <nav aria-label="主导航">
+        <a href="#overview">路线总览</a>
+        <a href="#days">每日行程</a>
+      </nav>
+      <span class="privacy-pill"><span aria-hidden="true">●</span> 私人路线</span>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">不自驾 · 一个人 · 29 天</p>
+          <h1 id="hero-title">坐着火车与班车，<br /><em>把新疆走成一条线。</em></h1>
+          <p class="hero-intro">
+            从乌鲁木齐出发，穿过伊犁草原、南疆古城与帕米尔高原，最后抵达哈密。这里记录每一天怎么走、看什么，以及公共交通如何衔接。
+          </p>
+          <a class="primary-action" href="#overview">打开 29 天路线 <span aria-hidden="true">↘</span></a>
+          <dl class="hero-stats" aria-label="路线统计">
+            <div><dt>29</dt><dd>旅行天数</dd></div>
+            <div><dt>4</dt><dd>旅行区域</dd></div>
+            <div><dt>18</dt><dd>关键停靠点</dd></div>
+            <div><dt>0</dt><dd>自驾公里</dd></div>
+          </dl>
+        </div>
+
+        <div class="hero-visual" aria-label="新疆路线装饰图">
+          <svg viewBox="0 0 620 500" role="img" aria-labelledby="mini-map-title mini-map-desc">
+            <title id="mini-map-title">新疆 29 天公共交通路线</title>
+            <desc id="mini-map-desc">路线从乌鲁木齐向西，经伊犁与南疆，再向东抵达哈密。</desc>
+            <path class="land-shape" d="M60 138 132 75l100-16 70 30 70-30 107 39 70 86-15 104 43 64-73 77-101-12-69 38-91-26-78 24-61-76 21-80-74-54Z" />
+            <path class="hero-route" d="M385 145 C310 112 235 120 188 165 S120 250 190 282 S312 270 320 342 S190 368 133 398 S225 446 304 408 S390 318 438 270 S478 205 532 230" />
+            <g class="hero-dot start"><circle cx="385" cy="145" r="9"/><text x="400" y="150">乌鲁木齐</text></g>
+            <g class="hero-dot"><circle cx="188" cy="165" r="7"/><text x="130" y="151">赛里木湖</text></g>
+            <g class="hero-dot"><circle cx="190" cy="282" r="7"/><text x="112" y="279">伊犁草原</text></g>
+            <g class="hero-dot"><circle cx="133" cy="398" r="7"/><text x="68" y="426">帕米尔</text></g>
+            <g class="hero-dot"><circle cx="304" cy="408" r="7"/><text x="285" y="440">和田</text></g>
+            <g class="hero-dot end"><circle cx="532" cy="230" r="9"/><text x="546" y="235">哈密</text></g>
+          </svg>
+          <div class="route-caption">
+            <span>START<br /><strong>乌鲁木齐</strong></span>
+            <span class="caption-line"></span>
+            <span>END<br /><strong>哈密</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="overview section-shell" id="overview" aria-labelledby="overview-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow dark">ROUTE OVERVIEW</p>
+            <h2 id="overview-title">先看懂，29 天怎么串起来</h2>
+          </div>
+          <p>点击地图节点查看对应行程。线路是方向示意，不代表实际道路比例。</p>
+        </div>
+
+        <div class="map-card">
+          <div class="map-toolbar">
+            <span><i class="legend-dot major"></i> 主要停靠</span>
+            <span><i class="legend-dot scenic"></i> 景区节点</span>
+            <span class="map-hint">点一下城市，打开当天详情</span>
+          </div>
+          <div class="route-map-wrap">
+            <svg id="route-map" class="route-map" viewBox="0 0 1100 560" role="img" aria-label="29 天新疆路线交互地图"></svg>
+          </div>
+          <div class="map-summary" id="map-summary" aria-live="polite"></div>
+        </div>
+
+        <div class="expense-dashboard" aria-labelledby="expense-title">
+          <div class="expense-lead">
+            <p class="eyebrow dark">TRIP LEDGER</p>
+            <h2 id="expense-title">29 天，到底花了多少钱</h2>
+            <div class="grand-total"><span>最终总消费</span><strong>¥8,973.26</strong><small>约 ¥309.42 / 天</small></div>
+            <p class="ledger-note">分类账与区域账均能核对至总额；逐日合计少 ¥1，按原记录保留，不擅自改数。</p>
+          </div>
+          <div class="expense-breakdown">
+            <div>
+              <h3>花到哪里</h3>
+              <div id="category-breakdown" class="bar-list"></div>
+            </div>
+            <div>
+              <h3>走过哪里</h3>
+              <div id="region-breakdown" class="region-ledger"></div>
+            </div>
+          </div>
+          <div class="daily-ledger">
+            <div class="daily-ledger-heading">
+              <div><h3>每天花多少</h3><p>点击柱形直接查看当天路线与明细</p></div>
+              <span>逐日累计 ¥8,972.26</span>
+            </div>
+            <div id="daily-expense-chart" class="daily-expense-chart" aria-label="29天每日花销柱状图"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="days section-shell" id="days" aria-labelledby="days-title">
+        <div class="section-heading days-heading">
+          <div>
+            <p class="eyebrow dark">DAY BY DAY</p>
+            <h2 id="days-title">每天去哪里，怎么到</h2>
+          </div>
+          <p id="result-count" aria-live="polite">显示全部 29 天</p>
+        </div>
+
+        <div class="filter-panel" aria-label="行程筛选">
+          <div class="filter-group">
+            <span class="filter-label">按区域</span>
+            <div class="filter-options" id="region-filters"></div>
+          </div>
+          <div class="filter-divider" aria-hidden="true"></div>
+          <div class="filter-group">
+            <span class="filter-label">按天数</span>
+            <div class="filter-options" id="day-filters"></div>
+          </div>
+          <button class="reset-button" id="reset-filters" type="button">重置</button>
+        </div>
+
+        <div class="day-grid" id="day-grid"></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <span aria-hidden="true">⌁</span>
+          <h3>没有匹配的行程</h3>
+          <p>换个区域或天数范围看看。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>29 天一人公共交通游新疆 · 私人路线与花销档案</p>
+      <a href="#top">回到顶部 ↑</a>
+    </footer>
+
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="day-drawer" id="day-drawer" aria-hidden="true" aria-labelledby="drawer-title">
+      <button class="drawer-close" id="drawer-close" type="button" aria-label="关闭详情">×</button>
+      <div id="drawer-content"></div>
+    </aside>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
