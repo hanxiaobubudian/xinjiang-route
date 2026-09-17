@@ -183,11 +183,13 @@ function createDayCard(item) {
 
 function renderDays() {
   const filtered = getFilteredDays();
+  dayGrid.querySelectorAll(".day-card").forEach(card => revealObserver.unobserve(card));
   dayGrid.replaceChildren(...filtered.map(createDayCard));
   resultCount.textContent = filtered.length === 29 ? "显示全部 29 天" : `筛选出 ${filtered.length} 天`;
   emptyState.hidden = filtered.length !== 0;
   dayGrid.hidden = filtered.length === 0;
   updateMapFilter(filtered);
+  observeMotionTargets();
 }
 
 function buildMap() {
@@ -249,7 +251,49 @@ function updateMapFilter(filtered) {
   mapSummary.innerHTML = `<strong>${filtered.length}</strong><span>天符合当前条件 · ${regionLabel} · ${state.dayRange === "全部" ? "Day 1–29" : `Day ${state.dayRange}`}</span>`;
 }
 
+function renderExpensePie(selector, items) {
+  const container = document.querySelector(selector);
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const colors = ["#478c76", "#de9d6b", "#7d9cb4", "#a5b879"];
+  let offset = 0;
+  const segments = items.map((item, index) => {
+    const percentage = item.value / total * 100;
+    const segment = `<circle class="donut-segment" data-slice="${index}" data-percent="${percentage.toFixed(2)}%" role="button" tabindex="0" aria-label="${item.label} ${percentage.toFixed(2)}%" cx="100" cy="100" r="70" pathLength="100" stroke="${colors[index]}" stroke-dasharray="${percentage} ${100 - percentage}" stroke-dashoffset="${-offset}" transform="rotate(-90 100 100)" />`;
+    offset += percentage;
+    return segment;
+  }).join("");
+  container.innerHTML = `
+    <div class="donut-visual">
+      <svg class="donut-svg" viewBox="0 0 200 200" role="group" aria-label="点击扇区查看消费占比">${segments}</svg>
+      <div class="donut-center" aria-live="polite" aria-atomic="true"><strong></strong><span></span><small></small></div>
+    </div>
+    <div class="pie-tags">${items.map((item, index) => `<button type="button" class="pie-tag" data-slice="${index}" aria-label="${item.label} ${(item.value / total * 100).toFixed(2)}%" style="--tag-color:${colors[index]}"><i aria-hidden="true"></i>${item.label.split(/[（(]/)[0].trim()}<b>${(item.value / total * 100).toFixed(2)}%</b></button>`).join("")}</div>`;
+  function select(index) {
+    const item = items[index];
+    container.querySelector(".donut-center strong").textContent = `${(item.value / total * 100).toFixed(2)}%`;
+    container.querySelector(".donut-center span").textContent = item.label;
+    container.querySelector(".donut-center small").textContent = `¥${money(item.value)}`;
+    container.querySelectorAll(".donut-segment").forEach((segment, i) => {
+      segment.classList.toggle("is-selected", i === index);
+      segment.setAttribute("aria-pressed", String(i === index));
+    });
+    container.querySelectorAll(".pie-tag").forEach((tag, i) => tag.setAttribute("aria-pressed", String(i === index)));
+  }
+  container.querySelectorAll("[data-slice]").forEach(control => {
+    control.addEventListener("click", () => select(Number(control.dataset.slice)));
+    control.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select(Number(control.dataset.slice));
+      }
+    });
+  });
+  select(0);
+}
+
 function renderExpenseDashboard() {
+  renderExpensePie("#category-pie", expenseSummary.categories);
+  renderExpensePie("#region-pie", expenseSummary.regions);
   const maxCategory = Math.max(...expenseSummary.categories.map(item => item.value));
   categoryBreakdown.innerHTML = expenseSummary.categories.map(item => `
     <div class="bar-item">
@@ -345,12 +389,28 @@ document.addEventListener("keydown", event => {
 const filmCarousel = document.querySelector(".film-carousel");
 const filmSlide = document.querySelector("#film-slide");
 const filmDots = [...document.querySelectorAll("[data-film]")];
+const films = [
+  { theme: "沿途风景", description: "第一支精华视频预留位：记录沿途的山川、草原与湖泊。主题暂定，剪辑完成后更新。", color: "#b7d5b5" },
+  { theme: "城市片段", description: "第二支精华视频预留位：收藏街巷、集市与旅途中的生活片段。主题暂定，剪辑完成后更新。", color: "#e4c3a6" },
+  { theme: "旅途回望", description: "第三支精华视频预留位：把路上的相遇与难忘瞬间，剪成一段旅行回忆。主题暂定，剪辑完成后更新。", color: "#b8cedc" }
+];
+const filmStage = filmSlide.querySelector(".film-frame");
+filmStage.removeAttribute("aria-hidden");
+filmStage.setAttribute("aria-label", "视频封面轮播，点击两侧封面切换");
+filmStage.innerHTML = films.map((film, index) => `<button type="button" class="film-cover" data-cover="${index}" style="--cover-color:${film.color}" aria-label="选择旅行精华 ${index + 1}"><span class="cover-number">0${index + 1}</span><span class="cover-landscape" aria-hidden="true"></span><span class="cover-caption"><b>${film.theme}</b><small>暂定主题 · 视频待更新</small></span></button>`).join("");
+const filmCovers = [...filmStage.querySelectorAll(".film-cover")];
 let filmIndex = 0;
 
 function showFilm(index) {
   filmIndex = (index + filmDots.length) % filmDots.length;
   const number = String(filmIndex + 1).padStart(2, "0");
   document.querySelector("#film-title").textContent = `旅行精华 ${number}`;
+  filmSlide.querySelector(".film-copy p").textContent = films[filmIndex].description;
+  filmCovers.forEach((cover, position) => {
+    const relative = (position - filmIndex + films.length) % films.length;
+    cover.dataset.position = relative === 0 ? "center" : relative === 1 ? "right" : "left";
+    cover.setAttribute("aria-pressed", String(relative === 0));
+  });
   document.querySelector("#film-counter").textContent = `${number} / 03 · 待更新`;
   filmSlide.setAttribute("aria-label", `第 ${filmIndex + 1} 条，共 3 条`);
   filmDots.forEach((dot, position) => {
@@ -358,10 +418,13 @@ function showFilm(index) {
     else dot.removeAttribute("aria-current");
   });
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    filmSlide.getAnimations().forEach(animation => animation.cancel());
-    filmSlide.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 220 });
+    const copy = filmSlide.querySelector(".film-copy");
+    copy.getAnimations().forEach(animation => animation.cancel());
+    copy.animate([{ opacity: .25, transform: "translateY(12px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 420 });
   }
 }
+filmCovers.forEach(cover => cover.addEventListener("click", () => showFilm(Number(cover.dataset.cover))));
+showFilm(0);
 
 document.querySelector("#film-prev").addEventListener("click", () => showFilm(filmIndex - 1));
 document.querySelector("#film-next").addEventListener("click", () => showFilm(filmIndex + 1));
@@ -387,6 +450,108 @@ filmSlide.addEventListener("pointerup", event => {
   if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) showFilm(filmIndex + (dx < 0 ? 1 : -1));
 });
 
+// Progressive enhancement: content stays visible without animation or JavaScript.
+const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+const revealedElements = new WeakSet();
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(({ target, isIntersecting }) => {
+    target.classList.toggle("motion-in-view", isIntersecting);
+    if (!isIntersecting || revealedElements.has(target)) return;
+    revealedElements.add(target);
+    if (motionPreference.matches) return;
+    if (target.matches(".donut-svg")) {
+      target.animate([
+        { opacity: .25, transform: "rotate(-65deg) scale(.88)" },
+        { opacity: 1, transform: "rotate(0deg) scale(1)" }
+      ], { duration: 1000, easing: "cubic-bezier(.2,.7,.2,1)" });
+      return;
+    }
+    if (target.matches(".bar-fill, .expense-bar, .region-ledger-item")) {
+      const horizontal = target.matches(".bar-fill");
+      const row = target.matches(".region-ledger-item");
+      const item = horizontal ? target.closest(".bar-item") : row ? target : target.parentElement;
+      const index = [...item.parentElement.children].indexOf(item);
+      const from = row ? "translateX(14px)" : horizontal ? "scaleX(0)" : "scaleY(0)";
+      target.animate([
+        { opacity: .3, transform: from },
+        { opacity: 1, transform: "none" }
+      ], { duration: row ? 600 : 850, delay: (index % (row ? 3 : horizontal ? 4 : 8)) * 70, fill: "backwards", easing: "cubic-bezier(.22,.75,.2,1)" });
+      return;
+    }
+    const index = target.matches(".day-card") ? [...target.parentElement.children].indexOf(target) % 3 : 0;
+    target.animate([
+      { opacity: .35, transform: "translateY(18px)" },
+      { opacity: 1, transform: "translateY(0)" }
+    ], { duration: 550, delay: index * 65, easing: "cubic-bezier(.2,.7,.2,1)" });
+  });
+}, { threshold: .08 });
+
+function observeMotionTargets() {
+  document.querySelectorAll(".hero-copy, .hero-visual, .section-heading, .map-card, .expense-dashboard, .film-carousel, .filter-panel, .day-card, .bar-fill, .region-ledger-item, .expense-bar, .donut-svg").forEach(element => revealObserver.observe(element));
+}
+
+const progressBar = document.querySelector(".reading-progress");
+let progressFrame = 0;
+function updateReadingProgress() {
+  if (progressFrame) return;
+  progressFrame = requestAnimationFrame(() => {
+    const available = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = available > 0 ? Math.min(1, Math.max(0, window.scrollY / available)) : 0;
+    progressBar.style.transform = `scaleX(${progress})`;
+    progressFrame = 0;
+  });
+}
+window.addEventListener("scroll", updateReadingProgress, { passive: true });
+window.addEventListener("resize", updateReadingProgress);
+new ResizeObserver(updateReadingProgress).observe(document.querySelector("main"));
+
+const heroSurface = document.querySelector(".hero");
+const heroVisual = document.querySelector(".hero-visual");
+const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+function resetParallax() {
+  heroVisual.style.removeProperty("--parallax-x");
+  heroVisual.style.removeProperty("--parallax-y");
+}
+heroSurface.addEventListener("pointermove", event => {
+  if (motionPreference.matches || !finePointer.matches) return;
+  const bounds = heroSurface.getBoundingClientRect();
+  heroVisual.style.setProperty("--parallax-x", `${((event.clientX - bounds.left) / bounds.width - .5) * 14}px`);
+  heroVisual.style.setProperty("--parallax-y", `${((event.clientY - bounds.top) / bounds.height - .5) * 10}px`);
+});
+heroSurface.addEventListener("pointerleave", resetParallax);
+finePointer.addEventListener("change", resetParallax);
+motionPreference.addEventListener("change", () => {
+  resetParallax();
+  if (motionPreference.matches) document.getAnimations().forEach(animation => {
+    if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
+  });
+});
+
+function setupOdometer() {
+  const amount = document.querySelector(".grand-total strong");
+  const label = amount.textContent;
+  amount.setAttribute("role", "img");
+  amount.setAttribute("aria-label", label);
+  amount.innerHTML = `<span class="odometer" aria-hidden="true">${[...label].map(character => {
+    if (!/\d/.test(character)) return `<span class="odo-punctuation">${character}</span>`;
+    const steps = 20 + Number(character);
+    return `<span class="odo-digit" data-digit="${character}"><span class="odo-strip" style="transform:translateY(-${steps * 1.1}em)">${Array.from({ length: steps + 1 }, (_, index) => `<span class="odo-cell">${index % 10}</span>`).join("")}</span></span>`;
+  }).join("")}</span>`;
+  const observer = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    observer.disconnect();
+    amount.dataset.animated = "true";
+    if (motionPreference.matches) return;
+    amount.querySelectorAll(".odo-strip").forEach((strip, index) => {
+      strip.animate([{ transform: "translateY(0)" }, { transform: strip.style.transform }], {
+        duration: 1400 + index * 90, delay: index * 45, fill: "backwards", easing: "cubic-bezier(.15,.65,.2,1)"
+      });
+    });
+  }, { threshold: .6 });
+  observer.observe(amount);
+}
+
+setupOdometer();
 buildMap();
 renderExpenseDashboard();
 render();

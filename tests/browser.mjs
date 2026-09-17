@@ -24,6 +24,37 @@ page.on("console", message => {
 page.on("pageerror", error => errors.push(error.message));
 
 await page.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
+await page.locator(".grand-total strong").scrollIntoViewIfNeeded();
+await page.waitForFunction(() => document.querySelector(".grand-total strong").dataset.animated === "true");
+await page.locator(".grand-total strong").evaluate(node => Promise.all(node.getAnimations({ subtree: true }).map(animation => animation.finished)));
+if (await page.locator(".grand-total strong").getAttribute("aria-label") !== "¥8,973.26") throw new Error("Odometer total changed");
+const digits = await page.locator(".odo-digit").evaluateAll(columns => columns.map(column => {
+  const box = column.getBoundingClientRect();
+  const visible = [...column.querySelectorAll(".odo-cell")].find(cell => {
+    const bounds = cell.getBoundingClientRect();
+    return Math.abs(bounds.top - box.top) < 2;
+  });
+  return visible?.textContent;
+}).join(""));
+if (digits !== "897326") throw new Error(`Odometer settled on incorrect digits: ${digits}`);
+await page.locator(".expense-lead").screenshot({ path: "work/qa/odometer.png" });
+if (await page.locator(".donut-legend, .donut-note").count()) throw new Error("Removed legend still exists");
+for (const [id, key] of [["category-pie", "categories"], ["region-pie", "regions"]]) {
+  const expected = await page.evaluate(key => {
+    const items = window.__XINJIANG_ROUTE__.expenseSummary[key];
+    const total = items.reduce((sum, item) => sum + item.value, 0);
+    return items.map(item => `${(item.value / total * 100).toFixed(2)}%`);
+  }, key);
+  const actual = await page.locator(`#${id} .donut-segment`).evaluateAll(nodes => nodes.map(node => node.dataset.percent));
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error("Pie percentages mismatch");
+  await page.locator(`#${id} .donut-segment`).last().focus();
+  await page.keyboard.press("Enter");
+  if (await page.locator(`#${id} .donut-center strong`).textContent() !== expected.at(-1)) throw new Error("Pie selection failed");
+}
+await page.locator(".expense-breakdown").screenshot({ path: "work/qa/desktop-pies.png" });
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.mouse.move(1100, 300);
+if (!(await page.locator(".hero-visual").evaluate(node => node.style.getPropertyValue("--parallax-x")))) throw new Error("Desktop parallax not active");
 const iconSize = await page.evaluate(async () => {
   const icon = new Image();
   icon.src = document.querySelector('link[rel="icon"]').href;
@@ -38,6 +69,8 @@ if (await page.locator("#films video, #films iframe").count()) throw new Error("
 if (await page.locator("[data-film]").count() !== 3) throw new Error("Expected three film slots");
 await page.getByRole("button", { name: "下一条视频", exact: true }).click();
 if (await page.locator("#film-title").textContent() !== "旅行精华 02") throw new Error("Film next failed");
+if (!(await page.locator(".film-copy p").textContent()).includes("第二支")) throw new Error("Film description did not update");
+if (await page.locator('.film-cover[data-position="center"]').getAttribute("data-cover") !== "1") throw new Error("Wrong centered film");
 await page.getByRole("button", { name: "查看第 3 条视频", exact: true }).click();
 await page.getByRole("button", { name: "下一条视频", exact: true }).click();
 if (await page.locator("#film-title").textContent() !== "旅行精华 01") throw new Error("Film loop failed");
@@ -87,6 +120,19 @@ await mobile.locator(".hero-route").evaluate(node => Promise.all(node.getAnimati
 await mobile.screenshot({ path: "work/qa/mobile.png", fullPage: true });
 await mobile.screenshot({ path: "work/qa/mobile-hero.png" });
 await mobile.getByRole("link", { name: "旅行影像", exact: true }).tap();
+await mobile.locator("#category-pie").scrollIntoViewIfNeeded();
+await mobile.locator("#category-pie .donut-svg").evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished)));
+const slicePoint = await mobile.locator("#category-pie .donut-segment").nth(1).evaluate(node => {
+  const box = node.ownerSVGElement.getBoundingClientRect();
+  const midpoint = -Number(node.getAttribute("stroke-dashoffset")) + Number(node.dataset.percent.replace("%", "")) / 2;
+  const angle = midpoint / 100 * Math.PI * 2 - Math.PI / 2;
+  return { x: box.x + box.width * (.5 + .35 * Math.cos(angle)), y: box.y + box.height * (.5 + .35 * Math.sin(angle)) };
+});
+await mobile.touchscreen.tap(slicePoint.x, slicePoint.y);
+if (await mobile.locator("#category-pie .donut-segment").nth(1).getAttribute("aria-pressed") !== "true") throw new Error("Mobile pie selection failed");
+await mobile.locator("#category-pie").screenshot({ path: "work/qa/mobile-pie.png" });
+await mobile.waitForFunction(() => document.querySelector(".reading-progress").style.transform !== "scaleX(0)");
+if (await mobile.locator(".hero-visual").evaluate(node => node.style.getPropertyValue("--parallax-x"))) throw new Error("Touch devices must not use mouse parallax");
 await mobile.getByRole("button", { name: "查看第 2 条视频", exact: true }).tap();
 if (await mobile.locator("#film-title").textContent() !== "旅行精华 02") throw new Error("Mobile film selection failed");
 await mobile.locator("#film-slide").scrollIntoViewIfNeeded();
@@ -97,7 +143,7 @@ await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: 
 for (const x of [260, 210, 160, 100]) await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: swipeY }] });
 await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 if (await mobile.locator("#film-title").textContent() !== "旅行精华 03") throw new Error("Mobile film swipe failed");
-await mobile.locator("#films").screenshot({ path: "work/qa/mobile-films.png" });
+await mobile.locator("#films").screenshot({ path: "work/qa/mobile-films.png", animations: "disabled" });
 if (await mobile.locator(".day-card").count() !== 29) throw new Error("Mobile render lost day cards");
 await mobile.getByRole("link", { name: "每日行程", exact: true }).tap();
 await mobile.getByRole("button", { name: "伊犁", exact: true }).tap();
@@ -123,6 +169,7 @@ await mobile.locator("#day-drawer.open").waitFor();
 if (!(await mobile.locator(".expense-reconcile").textContent()).includes("¥6")) throw new Error("Mobile expense tap failed");
 await mobile.getByRole("button", { name: "关闭详情" }).tap();
 await mobile.emulateMedia({ reducedMotion: "reduce" });
+if (await mobile.locator(".map-line").evaluate(node => getComputedStyle(node).animationName !== "none")) throw new Error("Reduced-motion map must be static");
 if (await mobile.locator(".route-traveler").isVisible()) throw new Error("Reduced-motion traveler must be hidden");
 if (await mobile.locator(".hero-route").evaluate(node => getComputedStyle(node).animationName !== "none")) throw new Error("Reduced-motion route must be static");
 if (errors.length) throw new Error(`Browser errors: ${errors.join(" | ")}`);
