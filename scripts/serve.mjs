@@ -6,10 +6,13 @@ const files = {
   "/index.html": ["index.html", "text/html; charset=utf-8"],
   "/styles.css": ["styles.css", "text/css; charset=utf-8"],
   "/app.js": ["app.js", "text/javascript; charset=utf-8"],
+  "/site-icon.png": ["site-icon.png", "image/png"],
+  "/favicon-32.png": ["favicon-32.png", "image/png"],
+  "/apple-touch-icon.png": ["apple-touch-icon.png", "image/png"],
+  "/favicon.ico": ["favicon-32.png", "image/png"],
 };
 createServer(async (request, response) => {
   const path = (request.url || "/").split("?")[0];
-  if (path === "/favicon.ico") { response.writeHead(204).end(); return; }
   const file = Object.hasOwn(files, path) ? files[path] : null;
   if (!file) { response.writeHead(404).end("Not found"); return; }
   try {

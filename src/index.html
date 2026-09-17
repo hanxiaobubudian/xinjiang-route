@@ -3,12 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#172b2a" />
+    <meta name="theme-color" content="#f1f8f3" />
     <meta
       name="description"
       content="29 天一人公共交通游新疆：从乌鲁木齐到哈密，按天查看城市、交通、景点、关键路线和旅行花销。"
     />
     <title>向西去｜29天一人公共交通游新疆</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=2" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -19,9 +21,10 @@
       </a>
       <nav aria-label="主导航">
         <a href="#overview">路线总览</a>
+        <a href="#films">旅行影像</a>
         <a href="#days">每日行程</a>
       </nav>
-      <span class="privacy-pill"><span aria-hidden="true">●</span> 私人路线</span>
+      <span class="privacy-pill"><span aria-hidden="true">●</span> 小部走过的路线</span>
     </header>
 
     <main id="top">
@@ -46,7 +49,14 @@
             <title id="mini-map-title">新疆 29 天公共交通路线</title>
             <desc id="mini-map-desc">路线从乌鲁木齐向西，经伊犁与南疆，再向东抵达哈密。</desc>
             <path class="land-shape" d="M60 138 132 75l100-16 70 30 70-30 107 39 70 86-15 104 43 64-73 77-101-12-69 38-91-26-78 24-61-76 21-80-74-54Z" />
-            <path class="hero-route" d="M385 145 C310 112 235 120 188 165 S120 250 190 282 S312 270 320 342 S190 368 133 398 S225 446 304 408 S390 318 438 270 S478 205 532 230" />
+            <path class="hero-route" id="hero-route-path" pathLength="1" d="M385 145 C310 112 235 120 188 165 S120 250 190 282 S312 270 320 342 S190 368 133 398 S225 446 304 408 S390 318 438 270 S478 205 532 230" />
+            <g class="route-traveler" aria-hidden="true">
+              <circle r="13" class="traveler-halo" />
+              <circle r="5" class="traveler-core" />
+              <animateMotion dur="14s" repeatCount="indefinite" calcMode="paced">
+                <mpath href="#hero-route-path" />
+              </animateMotion>
+            </g>
             <g class="hero-dot start"><circle cx="385" cy="145" r="9"/><text x="400" y="150">乌鲁木齐</text></g>
             <g class="hero-dot"><circle cx="188" cy="165" r="7"/><text x="130" y="151">赛里木湖</text></g>
             <g class="hero-dot"><circle cx="190" cy="282" r="7"/><text x="112" y="279">伊犁草原</text></g>
@@ -77,7 +87,8 @@
             <span><i class="legend-dot scenic"></i> 景区节点</span>
             <span class="map-hint">点一下城市，打开当天详情</span>
           </div>
-          <div class="route-map-wrap">
+          <p class="mobile-map-hint">左右滑动地图 · 点击城市查看行程 ↔</p>
+          <div class="route-map-wrap" tabindex="0" role="region" aria-label="路线地图，可左右滑动">
             <svg id="route-map" class="route-map" viewBox="0 0 1100 560" role="img" aria-label="29 天新疆路线交互地图"></svg>
           </div>
           <div class="map-summary" id="map-summary" aria-live="polite"></div>
@@ -107,6 +118,44 @@
             </div>
             <div id="daily-expense-chart" class="daily-expense-chart" aria-label="29天每日花销柱状图"></div>
           </div>
+        </div>
+      </section>
+
+      <section class="films section-shell" id="films" aria-labelledby="films-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow dark">TRAVEL FILMS</p>
+            <h2 id="films-title">把喜欢的瞬间，留在影像里</h2>
+          </div>
+          <p>不必每天一支视频。把沿途值得回看的风景与故事，慢慢剪成精华。</p>
+        </div>
+        <div class="film-carousel" role="region" aria-roledescription="轮播" aria-label="旅行精华视频">
+        <div class="film-placeholder" id="film-slide" role="group" aria-roledescription="幻灯片" aria-label="第 1 条，共 3 条" tabindex="0">
+          <div class="film-frame" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="7" y="10" width="34" height="28" rx="4" />
+              <path d="M15 10v28M33 10v28M7 19h8M7 29h8M33 19h8M33 29h8" />
+            </svg>
+            <span>为旅途的精彩留一帧</span>
+          </div>
+          <div class="film-copy">
+            <span class="film-status">影像待更新</span>
+            <h3 id="film-title">旅行精华 01</h3>
+            <p>这里预留给之后剪辑的精选视频。一段旅程、一片风景，或几个难忘的瞬间，都可以成为一支短片。</p>
+            <small>视频发布后会展示在这里，不按每天安排。</small>
+          </div>
+        </div>
+        <div class="film-controls">
+          <button type="button" id="film-prev" class="film-arrow" aria-label="上一条视频">←</button>
+          <div class="film-dots" aria-label="选择视频">
+            <button type="button" aria-label="查看第 1 条视频" aria-current="true" data-film="0"><span></span></button>
+            <button type="button" aria-label="查看第 2 条视频" data-film="1"><span></span></button>
+            <button type="button" aria-label="查看第 3 条视频" data-film="2"><span></span></button>
+          </div>
+          <span id="film-counter" class="film-counter" aria-live="polite" aria-atomic="true">01 / 03 · 待更新</span>
+          <button type="button" id="film-next" class="film-arrow" aria-label="下一条视频">→</button>
+        </div>
+        <p class="film-swipe-hint">左右滑动或使用箭头，查看 3 条预留影像</p>
         </div>
       </section>
 

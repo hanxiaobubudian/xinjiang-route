@@ -213,6 +213,9 @@ function buildMap() {
 
     const circle = document.createElementNS(ns, "circle");
     circle.setAttribute("r", stop.type === "major" ? "7" : "6");
+    const hitArea = document.createElementNS(ns, "circle");
+    hitArea.setAttribute("class", "node-hit");
+    hitArea.setAttribute("r", "22");
     const text = document.createElementNS(ns, "text");
     text.setAttribute("x", String(stop.tx));
     text.setAttribute("y", String(stop.ty));
@@ -224,7 +227,7 @@ function buildMap() {
     dayText.setAttribute("y", String(stop.ty + (stop.ty > 0 ? 14 : -14)));
     if (stop.anchor) dayText.setAttribute("text-anchor", stop.anchor);
     dayText.textContent = `DAY ${String(stop.day).padStart(2, "0")}`;
-    group.append(circle, text, dayText);
+    group.append(circle, hitArea, text, dayText);
     group.addEventListener("click", event => openDrawer(stop.day, event.currentTarget));
     group.addEventListener("keydown", event => {
       if (event.key === "Enter" || event.key === " ") {
@@ -308,6 +311,7 @@ function openDrawer(day, trigger) {
     drawer.classList.add("open");
   });
   drawer.setAttribute("aria-hidden", "false");
+  drawer.scrollTop = 0;
   document.body.classList.add("drawer-open");
   document.querySelector("#drawer-close").focus();
 }
@@ -335,6 +339,52 @@ document.querySelector("#drawer-close").addEventListener("click", closeDrawer);
 backdrop.addEventListener("click", closeDrawer);
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && drawer.classList.contains("open")) closeDrawer();
+});
+
+// Three independent highlight-film slots; no daily mapping or autoplay.
+const filmCarousel = document.querySelector(".film-carousel");
+const filmSlide = document.querySelector("#film-slide");
+const filmDots = [...document.querySelectorAll("[data-film]")];
+let filmIndex = 0;
+
+function showFilm(index) {
+  filmIndex = (index + filmDots.length) % filmDots.length;
+  const number = String(filmIndex + 1).padStart(2, "0");
+  document.querySelector("#film-title").textContent = `旅行精华 ${number}`;
+  document.querySelector("#film-counter").textContent = `${number} / 03 · 待更新`;
+  filmSlide.setAttribute("aria-label", `第 ${filmIndex + 1} 条，共 3 条`);
+  filmDots.forEach((dot, position) => {
+    if (position === filmIndex) dot.setAttribute("aria-current", "true");
+    else dot.removeAttribute("aria-current");
+  });
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    filmSlide.getAnimations().forEach(animation => animation.cancel());
+    filmSlide.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 220 });
+  }
+}
+
+document.querySelector("#film-prev").addEventListener("click", () => showFilm(filmIndex - 1));
+document.querySelector("#film-next").addEventListener("click", () => showFilm(filmIndex + 1));
+filmDots.forEach(dot => dot.addEventListener("click", () => showFilm(Number(dot.dataset.film))));
+filmCarousel.addEventListener("keydown", event => {
+  if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    event.preventDefault();
+    showFilm(filmIndex + (event.key === "ArrowRight" ? 1 : -1));
+  }
+});
+
+let filmTouchStart = null;
+filmSlide.addEventListener("pointerdown", event => {
+  if (event.pointerType !== "touch" || !event.isPrimary) return;
+  filmTouchStart = { x: event.clientX, y: event.clientY };
+});
+filmSlide.addEventListener("pointercancel", () => { filmTouchStart = null; });
+filmSlide.addEventListener("pointerup", event => {
+  if (!filmTouchStart || !event.isPrimary) return;
+  const dx = event.clientX - filmTouchStart.x;
+  const dy = event.clientY - filmTouchStart.y;
+  filmTouchStart = null;
+  if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) showFilm(filmIndex + (dx < 0 ? 1 : -1));
 });
 
 buildMap();
